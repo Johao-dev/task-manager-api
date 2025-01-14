@@ -4,12 +4,20 @@ import zuzz.projects.todolist.service.dto.ResponseDTO;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import zuzz.projects.todolist.persistence.entity.UserEntity;
+import zuzz.projects.todolist.persistence.repository.UserRepository;
 
 @Component
 public class UserValidation {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     private Logger logger = LoggerFactory.getLogger(UserValidation.class);
     
@@ -54,5 +62,20 @@ public class UserValidation {
         }
         
         return response;
+    }
+
+    public boolean isEmailRegistered(String email) {
+        logger.info("Checking if email is registered.");
+        return userRepository.findByEmail(email).isPresent();
+    }
+
+    public boolean isUsernameTaken(String username) {
+        logger.info("Checking if username is taken.");
+        return userRepository.findByUsername(username).isPresent();
+    }
+
+    public boolean verifyPassword(String enteredPassword, String storedPassword) {
+        logger.info("Verifying password");
+        return encoder.matches(enteredPassword, storedPassword);
     }
 }

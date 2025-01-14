@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
-import java.util.List;
+// import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+// import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,36 +38,31 @@ public class AuthServiceImpl implements AuthService {
 
     private Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
-    public Map<String, String> login(LoginDTO login) throws Exception {
+    public Map<String, String> login(LoginDTO login) {
         Map<String, String> jwt = new HashMap<>();
         logger.info("Logging in");
-
+        
         try {
-            Optional<UserEntity> user = userRepository.findByEmail(login.getEmail());
-
-            if (user.isEmpty()) {
-                logger.error("User not registered.");
-                jwt.put("error", "user not registered");
-                return jwt;
+            if (userValidation.isEmailRegistered(login.getEmail())) {
+    
+                UserEntity user = userRepository.findByEmail(login.getEmail()).get();
+    
+                if (userValidation.verifyPassword(login.getPassword(), user.getPassword())) {
+                    jwt.put("jwt", jwtService.generateJwt(user.getId()));
+                    logger.info("Authentication successful");
+                } else {
+                    jwt.put("error", "Authentication failed");
+                    logger.error("Authentication failed");
+                }
             }
-
-            if (verifyPassword(login.getPassword(), user.get().getPassword())) {
-                jwt.put("jwt", jwtService.generateJwt(user.get().getId()));
-                logger.info("Authentication successful");
-            } else {
-                jwt.put("error", "Authentication failed");
-                logger.error("Authentication failed");
-            }
-
         } catch(JOSEException | IOException | NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            logger.error("Error logging in");
-            ex.printStackTrace(System.out);
+            logger.error("Error logging in. {}", ex);
         }
 
         return jwt;
     }
 
-    public ResponseDTO register(UserEntity user) throws Exception {
+    public ResponseDTO register(UserEntity user) {
         logger.info("Registering user");
         ResponseDTO response = userValidation.validate(user);
 
@@ -77,16 +72,18 @@ public class AuthServiceImpl implements AuthService {
                 return response;
             }
 
-            List<UserEntity> users = userRepository.findAll();
-
-            for (UserEntity existingUser : users) {
-                if (existingUser.getEmail().equals(user.getEmail())) {
-                    logger.error("Email already exists");
-                    response.setNumberOfErrors(response.getNumberOfErrors() + 1);
-                    logger.error("errors: " + response.getNumberOfErrors());
-                    response.setMessage("Email already exists");
-                    return response;
-                }
+            if (userValidation.isEmailRegistered(user.getEmail())) {
+                logger.error("Email already exists");
+                response.setNumberOfErrors(response.getNumberOfErrors() + 1);
+                response.setMessage("Email already exists");
+                return response;
+            }
+    
+            if (userValidation.isUsernameTaken(user.getUsername())) {
+                logger.error("Username already exists");
+                response.setNumberOfErrors(response.getNumberOfErrors() + 1);
+                response.setMessage("Username already exists");
+                return response;
             }
 
             BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
@@ -96,16 +93,9 @@ public class AuthServiceImpl implements AuthService {
             logger.info("User created successfully");
             
         }catch(Exception ex) {
-            logger.error("Error registering user");
-            ex.printStackTrace(System.out);
+            logger.error("Error registering user. {}", ex);
         }
 
         return response;
-    }
-
-    private boolean verifyPassword(String enteredPassword, String storedPassword) {
-        logger.info("Verifying password");
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        return encoder.matches(enteredPassword, storedPassword);
     }
 }

@@ -1,4 +1,4 @@
-package zuzz.projects.todolist.service.exception;
+package zuzz.projects.todolist.service.exception.task;
 
 public class TaskException extends Exception {
 
