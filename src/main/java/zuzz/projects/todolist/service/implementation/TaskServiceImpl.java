@@ -72,7 +72,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public TaskEntity fingById(Long id)
+    public TaskEntity findById(Long id)
         throws TaskNotFoundException, UserNotFoundException,
         UserIsNotOwnerOfTaskException {
             

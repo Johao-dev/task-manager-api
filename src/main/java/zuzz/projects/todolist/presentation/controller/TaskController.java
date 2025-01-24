@@ -73,7 +73,7 @@ public class TaskController {
         UserIsNotOwnerOfTaskException {
 
         logger.info("GET /api/tasks/{taskId} is called.");
-        TaskEntity task = taskService.fingById(taskId);
+        TaskEntity task = taskService.findById(taskId);
         logger.info("Task found.");
         return ResponseEntity.ok(task);
     }

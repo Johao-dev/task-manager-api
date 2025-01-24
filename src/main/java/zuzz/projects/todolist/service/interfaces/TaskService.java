@@ -22,7 +22,7 @@ public interface TaskService {
         throws TaskNotFoundException, UserNotFoundException,
         UserIsNotOwnerOfTaskException;
 
-    TaskEntity fingById(Long id) 
+    TaskEntity findById(Long id) 
         throws TaskNotFoundException, UserNotFoundException,
         UserIsNotOwnerOfTaskException;
 
